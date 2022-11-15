@@ -8,10 +8,13 @@ this is a **WIP**
 ## whats done
 - [X] determining file extension
 - [ ] determining file type
-- [ ] determining file's mime type
-- [ ] determining file
+- [X] determining file's mime type
 
 ## usage
 ```sh
-$ file-rs "Cargo.toml Cargo.lock"
+$ file-rs <file> <args>
+```
+- example:
+```sh
+$ file-rs Cargo.toml
 ```

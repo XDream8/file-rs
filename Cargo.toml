@@ -12,6 +12,7 @@ license = "MIT"
 
 [dependencies]
 seahorse = "2.1"
+mime_guess = "2.0.4"
 
 [profile.release]
 lto = "thin"
