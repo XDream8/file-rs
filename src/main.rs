@@ -24,7 +24,7 @@ fn main() {
 
 fn action(c: &Context) {
     // args
-    let files = match c.args.len() {
+    let files: &str = match c.args.len() {
         1 => &c.args[0],
         _ => {
             c.help();
@@ -38,23 +38,29 @@ fn action(c: &Context) {
     for file in files.split_whitespace() {
         // print mime type
         if show_mime_type {
-            let mime: String = match mime_guess::from_path(file).first() {
-                Some(mime) =>  format!("{}", mime).to_string(),
-                _ => "???".to_string(),
-            };
-            println!("{}: {}", file, mime);
+            println!("{}: {}", file, get_mime_type(file));
         }
         // default output(prints extension)
         else {
-            let extension: String = match get_file_extension(file) {
-                Some(ext) => format!("{}", ext).to_string(),
-                None => "???".to_string(),
-            };
-            println!("{}: {}", file, extension);
+            println!("{}: {}", file, get_file_extension(file));
         }
     }
 }
 
-fn get_file_extension(filename: &str) -> Option<&str> {
-    Path::new(filename).extension().and_then(OsStr::to_str)
+fn get_mime_type(filename: &str) -> String {
+    let mime_type: String = match mime_guess::from_path(filename).first() {
+        Some(mime) =>  format!("{}", mime).to_string(),
+        _ => "???".to_string(),
+    };
+
+    return mime_type
+}
+
+fn get_file_extension(filename: &str) -> String {
+    let extension: String = match Path::new(filename).extension().and_then(OsStr::to_str) {
+        Some(ext) => format!("{}", ext).to_string(),
+        None => "???".to_string(),
+    };
+
+    return extension
 }

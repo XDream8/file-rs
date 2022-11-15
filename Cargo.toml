@@ -1,6 +1,6 @@
 [package]
 name = "file-rs"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 description = "a tool for determining file types"
 repository = "https://github.com/XDream8/file-rs"
