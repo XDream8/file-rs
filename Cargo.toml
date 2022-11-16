@@ -1,14 +1,12 @@
 [package]
 name = "file-rs"
-version = "0.1.2"
+version = "0.1.4"
 edition = "2021"
 description = "a tool for determining file types"
 repository = "https://github.com/XDream8/file-rs"
 authors = ["XDream8 <WolfsDream@proton.me>"]
 readme = "README.md"
 license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 seahorse = "2.1"

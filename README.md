@@ -7,12 +7,13 @@ this is a **WIP**
 
 ## whats done
 - [X] determining file extension
-- [ ] determining file type
+- [X] determining file type
 - [X] determining file's mime type
 
 ## usage
 ```sh
-$ file-rs <file> <args>
+$ file-rs -h
+$ file-rs <files> <args>
 ```
 - example:
 ```sh
