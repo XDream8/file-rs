@@ -6,16 +6,20 @@
 this is a **WIP**
 
 ## whats done
-- [X] determining file extension
-- [X] determining file type
-- [X] determining file's mime type
+
+- [x] determining file extension
+- [x] determining file type
+- [x] determining file's mime type
 
 ## usage
+
 ```sh
 $ file-rs -h
 $ file-rs <files> <args>
 ```
+
 - example:
+
 ```sh
 $ file-rs Cargo.toml
 ```

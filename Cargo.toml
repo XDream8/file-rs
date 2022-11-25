@@ -1,16 +1,16 @@
 [package]
 name = "file-rs"
 version = "0.1.4"
-edition = "2021"
-description = "a tool for determining file types"
-repository = "https://github.com/XDream8/file-rs"
 authors = ["XDream8 <WolfsDream@proton.me>"]
-readme = "README.md"
+edition = "2021"
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/XDream8/file-rs"
+description = "a tool for determining file types"
 
 [dependencies]
-seahorse = "2.1"
 mime_guess = "2.0.4"
+seahorse = "2.1"
 
 [profile.release]
 lto = "thin"
