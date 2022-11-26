@@ -3,8 +3,6 @@
     <p>a tool for determining file types, an alternative to file</p>
 </div>
 
-this is a **WIP**
-
 ## whats done
 
 - [x] determining file extension
@@ -22,4 +20,46 @@ $ file-rs <files> <args>
 
 ```sh
 $ file-rs Cargo.toml
+```
+
+## benchmarks
+
+my benchmarks shows that file-rs is almost %98 faster than file.
+
+these benchmarks were done:
+
+- to calculate the performance difference between file-rs and file
+- on an old core2 laptop and even on old computers file-rs performs a lot better than file
+- in this repo(current dir)
+
+### 1
+
+- file:
+
+```sh
+$ ./benchmark.sh file                                                                                                git@main
+94.274010965
+```
+
+- file-rs:
+
+```sh
+$ ./benchmark.sh file-rs                                                                                             git@main
+2.444943173
+```
+
+### 2
+
+- file:
+
+```sh
+$ ./benchmark.sh file                                                                                                git@main
+97.173416678
+```
+
+- file-rs:
+
+```sh
+$ ./benchmark.sh file-rs                                                                                             git@main
+2.461263894
 ```
