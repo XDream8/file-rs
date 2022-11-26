@@ -43,7 +43,7 @@ fn action(c: &Context) {
         .skip_while(|file| {
             if is_exists(file) == false {
                 println!(
-                    "{filename}: cannot open '{filename}' (No such file, directory or flag)",
+                    "{filename:<10}: cannot open '{filename}' (No such file, directory or flag)",
                     filename = file
                 );
                 return true;
