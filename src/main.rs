@@ -9,6 +9,9 @@ use std::{ffi::OsStr, path::Path};
 use std::fs;
 use std::os::unix::fs::FileTypeExt;
 
+// threading
+use std::thread;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -33,40 +36,37 @@ fn main() {
 
 fn action(c: &Context) {
     // args
-    let files = &c.args;
+    let files: &Vec<String> = &c.args;
     let show_mime_type: bool = c.bool_flag("mime-type");
     let show_extension: bool = c.bool_flag("extension");
 
     // main thing
-    files
-        .iter()
-        .skip_while(|file| {
-            if is_exists(file) == false {
-                println!(
-                    "{filename:<10}: cannot open '{filename}' (No such file, directory or flag)",
+    thread::scope(|s| {
+        for file in files.iter() {
+            s.spawn(move || {
+                let mut skip: bool = false;
+                if is_exists(file) == false {
+                    println!(
+                    "{filename:<15}: cannot open '{filename}' (No such file, directory or flag)",
                     filename = file
                 );
-                return true;
-            } else {
-                return false;
-            }
-        })
-        .for_each(|file| {
-            std::thread::scope(|s| {
-                s.spawn(|| {
+                    skip = true;
+                }
+                if !skip {
                     // print mime type
                     if show_mime_type {
-                        println!("{:<10}: {:<10}", file, get_mime_type(file));
+                        println!("{:<15}: {:<15}", file, get_mime_type(file));
                     }
                     // default output(prints extension)
                     else if show_extension {
-                        println!("{:<10}: {:<10}", file, get_file_extension(file));
+                        println!("{:<15}: {:<15}", file, get_file_extension(file));
                     } else {
-                        println!("{:<10}: {:<10}", file, get_file_type(file));
+                        println!("{:<15}: {:<15}", file, get_file_type(file));
                     }
-                });
+                }
             });
-        });
+        }
+    })
 }
 
 fn is_exists(filename: &str) -> bool {
