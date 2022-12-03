@@ -37,14 +37,14 @@ these benchmarks were done:
 - file:
 
 ```sh
-$ ./benchmark.sh file                                                                                                git@main
+$ ./benchmark.sh file
 94.274010965
 ```
 
 - file-rs:
 
 ```sh
-$ ./benchmark.sh file-rs                                                                                             git@main
+$ ./benchmark.sh file-rs
 2.444943173
 ```
 
@@ -53,13 +53,13 @@ $ ./benchmark.sh file-rs                                                        
 - file:
 
 ```sh
-$ ./benchmark.sh file                                                                                                git@main
+$ ./benchmark.sh file
 97.173416678
 ```
 
 - file-rs:
 
 ```sh
-$ ./benchmark.sh file-rs                                                                                             git@main
+$ ./benchmark.sh file-rs
 2.461263894
 ```
