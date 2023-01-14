@@ -9,6 +9,8 @@ use std::{ffi::OsStr, path::Path};
 use std::fs;
 use std::os::unix::fs::FileTypeExt;
 
+use std::io::{BufRead, BufReader};
+
 // threading
 use std::thread;
 
@@ -46,22 +48,27 @@ fn action(c: &Context) {
             s.spawn(move || {
                 let mut skip: bool = false;
                 if is_exists(file) == false {
-                    println!(
-                    "{filename:<15}: cannot open '{filename}' (No such file, directory or flag)",
-                    filename = file
-                );
+                    println!("{file:<15}: cannot open '{file}' (No such file, directory or flag)");
                     skip = true;
                 }
+
                 if !skip {
+                    let shebang: String = get_type_from_shebang(file);
                     // print mime type
                     if show_mime_type {
-                        println!("{:<15}: {:<15}", file, get_mime_type(file));
+                        println!("{file:<15}: {:<15}", get_mime_type(file));
                     }
                     // default output(prints extension)
                     else if show_extension {
-                        println!("{:<15}: {:<15}", file, get_file_extension(file));
-                    } else {
-                        println!("{:<15}: {:<15}", file, get_file_type(file));
+                        println!("{file:<15}: {:<15}", get_file_extension(file));
+                    }
+                    // if file does not have a shebang
+                    else if shebang == "" {
+                        println!("{file:<15}: {:<15}", get_file_type(file));
+                    }
+                    // if file has a shebang
+                    else {
+                        println!("{file:<15}: {shebang} script, {}", get_file_type(file));
                     }
                 }
             });
@@ -114,5 +121,37 @@ fn get_file_type(filename: &str) -> String {
         return "ASCII text".to_owned();
     } else {
         return "???".to_owned();
+    }
+}
+fn get_type_from_shebang(filename: &str) -> String {
+    // Open the file in read-only mode (ignoring errors).
+    let file = fs::File::open(filename).unwrap();
+    let mut reader = BufReader::new(file);
+
+    let mut shebang_line = String::new();
+    let _ = reader.read_line(&mut shebang_line);
+
+    // return empty string if file does not have a shebang
+    if !shebang_line.contains("#!") {
+        return "".to_owned();
+    }
+
+    // we dont want to take shebang flags if there is any
+    let shebang_compenents: Vec<&str> = shebang_line
+        .trim_end()
+        .trim_start_matches(|c| c == '#' || c == '!')
+        .splitn(2, ' ')
+        .collect();
+    // take the first shebang compenent
+    let shebang: &str = shebang_compenents.first().unwrap();
+
+    if shebang.contains("bash") {
+        return "Bourne-Again shell".to_owned();
+    } else if shebang.contains("sh") {
+        return "POSIX shell".to_owned();
+    } else if shebang.contains("python") {
+        return "Python".to_owned();
+    } else {
+        return shebang.to_owned();
     }
 }
