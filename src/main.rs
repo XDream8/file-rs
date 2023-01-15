@@ -1,6 +1,7 @@
 // for cli-args
 use seahorse::{App, Context, Flag, FlagType};
 use std::env;
+use std::process::exit;
 
 // for getting file ext
 use std::{ffi::OsStr, path::Path};
@@ -37,6 +38,11 @@ fn main() {
 }
 
 fn action(c: &Context) {
+    if c.args.is_empty() {
+        c.help();
+        exit(0);
+    }
+
     // args
     let files: &Vec<String> = &c.args;
     let show_mime_type: bool = c.bool_flag("mime-type");
@@ -53,7 +59,10 @@ fn action(c: &Context) {
                 }
 
                 if !skip {
-                    let shebang: String = get_type_from_shebang(file);
+                    let mut shebang: String = "".to_owned();
+                    if !show_mime_type | !show_extension {
+                        shebang = get_type_from_shebang(file);
+                    }
                     // print mime type
                     if show_mime_type {
                         println!("{file:<15}: {:<15}", get_mime_type(file));
@@ -104,23 +113,18 @@ fn get_file_extension(filename: &str) -> String {
 fn get_file_type(filename: &str) -> String {
     let metadata = fs::metadata(filename);
     let file_type = metadata.expect("Couldn't read files metadata!").file_type();
-    if file_type.is_symlink() == true {
-        let actual_file = fs::read_link(filename);
-        return format!("symbolic link to {:?}", actual_file).to_owned();
-    } else if file_type.is_block_device() == true {
-        return "block special".to_owned();
-    } else if file_type.is_char_device() == true {
-        return "char device".to_owned();
-    } else if file_type.is_fifo() == true {
-        return "fifo".to_owned();
-    } else if file_type.is_socket() == true {
-        return "socket".to_owned();
-    } else if file_type.is_dir() == true {
-        return "directory".to_owned();
-    } else if file_type.is_file() == true {
-        return "ASCII text".to_owned();
-    } else {
-        return "???".to_owned();
+    match file_type {
+        _ if file_type.is_symlink() => {
+            let actual_file = fs::read_link(filename);
+            return format!("symbolic link to {:?}", actual_file).to_owned();
+        }
+        _ if file_type.is_block_device() => "block special".to_owned(),
+        _ if file_type.is_char_device() => "char device".to_owned(),
+        _ if file_type.is_fifo() => "fifo".to_owned(),
+        _ if file_type.is_socket() => "socket".to_owned(),
+        _ if file_type.is_dir() => "directory".to_owned(),
+        _ if file_type.is_file() => "ASCII text".to_owned(),
+        _ => "???".to_owned(),
     }
 }
 fn get_type_from_shebang(filename: &str) -> String {
@@ -136,22 +140,26 @@ fn get_type_from_shebang(filename: &str) -> String {
         return "".to_owned();
     }
 
+    let shebang: &str;
+
     // we dont want to take shebang flags if there is any
     let shebang_compenents: Vec<&str> = shebang_line
         .trim_end()
         .trim_start_matches(|c| c == '#' || c == '!')
         .splitn(2, ' ')
         .collect();
-    // take the first shebang compenent
-    let shebang: &str = shebang_compenents.first().unwrap();
-
-    if shebang.contains("bash") {
-        return "Bourne-Again shell".to_owned();
-    } else if shebang.contains("sh") {
-        return "POSIX shell".to_owned();
-    } else if shebang.contains("python") {
-        return "Python".to_owned();
+    if !shebang_line.contains("/env ") || shebang_line.ends_with("env") {
+        // take the first shebang compenent
+        shebang = shebang_compenents.first().unwrap();
     } else {
-        return shebang.to_owned();
+        // take the command after env
+        shebang = shebang_compenents.last().unwrap();
+    }
+
+    match shebang {
+        _ if shebang.contains("bash") => "Bourne-Again shell".to_owned(),
+        _ if shebang.contains("sh") => "POSIX shell".to_owned(),
+        _ if shebang.contains("python") => "Python".to_owned(),
+        _ => shebang.to_owned(),
     }
 }
