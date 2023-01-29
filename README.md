@@ -29,8 +29,8 @@ my benchmarks shows that file-rs is almost %98 faster than file.
 these benchmarks were done:
 
 - to calculate the performance difference between file-rs and file
-- on an old core2 laptop and even on old computers file-rs performs a lot better than file
 - in this repo(current dir)
+- even on old computers file-rs performs a lot better than file
 
 ### 1
 

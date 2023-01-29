@@ -59,7 +59,7 @@ fn action(c: &Context) {
                 }
 
                 if !skip {
-                    let mut shebang: String = "".to_owned();
+                    let mut shebang: String = String::new();
                     if !show_mime_type | !show_extension {
                         shebang = get_type_from_shebang(file);
                     }
@@ -137,7 +137,7 @@ fn get_type_from_shebang(filename: &str) -> String {
 
     // return empty string if file does not have a shebang
     if !shebang_line.contains("#!") {
-        return "".to_owned();
+        return String::new();
     }
 
     let shebang: &str;
