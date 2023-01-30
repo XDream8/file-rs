@@ -151,18 +151,20 @@ fn get_type_from_shebang(path: &Path) -> String {
         return String::new();
     }
 
-    // we dont want to take shebang flags if there is any
-    let whitespace_pos = first_line.find(' ').unwrap();
-    let (comp1, comp2) = first_line.split_at(whitespace_pos);
-
     let shebang: &str;
 
+    // we dont want to take shebang flags if there is any
+    let shebang_compenents: Vec<&str> = first_line
+        .trim_end()
+        .trim_start_matches(|c| c == '#' || c == '!')
+        .splitn(2, ' ')
+        .collect();
     if !first_line.contains("/env ") || first_line.ends_with("env") {
         // take the first shebang compenent
-        shebang = comp1;
+        shebang = shebang_compenents.first().unwrap();
     } else {
         // take the command after env
-        shebang = comp2;
+        shebang = shebang_compenents.last().unwrap();
     }
 
     match shebang {
