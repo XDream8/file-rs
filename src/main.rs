@@ -3,17 +3,19 @@ use seahorse::{App, Context, Flag, FlagType};
 use std::env;
 use std::process::exit;
 
+use std::collections::HashSet;
+
 // for getting file ext
 use std::{ffi::OsStr, path::Path};
 
 // for getting file type
-use std::fs;
+use std::fs::{metadata, read_link, File};
 use std::os::unix::fs::FileTypeExt;
 
 use std::io::{BufRead, BufReader};
 
 // threading
-use std::thread;
+use rayon::{scope, ThreadPoolBuilder};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -44,16 +46,29 @@ fn action(c: &Context) {
     }
 
     // args
-    let files: &Vec<String> = &c.args;
+
+    let mut files: Vec<&str> = vec![];
+    c.args.iter().for_each(|arg| files.push(arg));
+    // remove duplicate files from files vector(this speeds up file-rs a lot)
+    let mut set = HashSet::new();
+    files.retain(|x| set.insert(x.clone()));
+
     let show_mime_type: bool = c.bool_flag("mime-type");
     let show_extension: bool = c.bool_flag("extension");
 
+    ThreadPoolBuilder::new()
+        .num_threads(num_cpus::get())
+        .build_global()
+        .unwrap();
+
     // main thing
-    thread::scope(|s| {
+    scope(|s| {
         for file in files.iter() {
-            s.spawn(move || {
+            s.spawn(move |_| {
+                let path = Path::new(file);
+
                 let mut skip: bool = false;
-                if is_exists(file) == false {
+                if path.exists() == false {
                     println!("{file:<15}: cannot open '{file}' (No such file, directory or flag)");
                     skip = true;
                 }
@@ -61,23 +76,23 @@ fn action(c: &Context) {
                 if !skip {
                     let mut shebang: String = String::new();
                     if !show_mime_type | !show_extension {
-                        shebang = get_type_from_shebang(file);
+                        shebang = get_type_from_shebang(path);
                     }
                     // print mime type
                     if show_mime_type {
-                        println!("{file:<15}: {:<15}", get_mime_type(file));
+                        println!("{file:<15}: {:<15}", get_mime_type(path));
                     }
                     // default output(prints extension)
                     else if show_extension {
-                        println!("{file:<15}: {:<15}", get_file_extension(file));
+                        println!("{file:<15}: {:<15}", get_file_extension(path));
                     }
                     // if file does not have a shebang
                     else if shebang == "" {
-                        println!("{file:<15}: {:<15}", get_file_type(file));
+                        println!("{file:<15}: {:<15}", get_file_type(path));
                     }
                     // if file has a shebang
                     else {
-                        println!("{file:<15}: {shebang} script, {}", get_file_type(file));
+                        println!("{file:<15}: {shebang} script, {}", get_file_type(path));
                     }
                 }
             });
@@ -85,16 +100,12 @@ fn action(c: &Context) {
     })
 }
 
-fn is_exists(filename: &str) -> bool {
-    Path::new(filename).exists()
-}
-
-fn get_mime_type(filename: &str) -> String {
-    match mime_guess::from_path(filename).first() {
+fn get_mime_type(path: &Path) -> String {
+    match mime_guess::from_path(path).first() {
         Some(mime) => format!("{}", mime).to_string(),
         // if mime type is not found, just show it as a plain text
         _ => {
-            if get_file_type(filename) == "directory" {
+            if get_file_type(path) == "directory" {
                 return "inode/directory".to_string();
             } else {
                 return "text/plain".to_string();
@@ -103,19 +114,19 @@ fn get_mime_type(filename: &str) -> String {
     }
 }
 
-fn get_file_extension(filename: &str) -> String {
-    match Path::new(filename).extension().and_then(OsStr::to_str) {
+fn get_file_extension(path: &Path) -> String {
+    match path.extension().and_then(OsStr::to_str) {
         Some(ext) => format!("{}", ext).to_string(),
         None => "???".to_string(),
     }
 }
 
-fn get_file_type(filename: &str) -> String {
-    let metadata = fs::metadata(filename);
+fn get_file_type(path: &Path) -> String {
+    let metadata = metadata(path);
     let file_type = metadata.expect("Couldn't read files metadata!").file_type();
     match file_type {
         _ if file_type.is_symlink() => {
-            let actual_file = fs::read_link(filename);
+            let actual_file = read_link(path);
             return format!("symbolic link to {:?}", actual_file).to_owned();
         }
         _ if file_type.is_block_device() => "block special".to_owned(),
@@ -127,33 +138,31 @@ fn get_file_type(filename: &str) -> String {
         _ => "???".to_owned(),
     }
 }
-fn get_type_from_shebang(filename: &str) -> String {
+fn get_type_from_shebang(path: &Path) -> String {
     // Open the file in read-only mode (ignoring errors).
-    let file = fs::File::open(filename).unwrap();
+    let file = File::open(path).unwrap();
     let mut reader = BufReader::new(file);
 
-    let mut shebang_line = String::new();
-    let _ = reader.read_line(&mut shebang_line);
+    let mut first_line = String::new();
+    let _ = reader.read_line(&mut first_line);
 
     // return empty string if file does not have a shebang
-    if !shebang_line.contains("#!") {
+    if !first_line.contains("#!") {
         return String::new();
     }
 
+    // we dont want to take shebang flags if there is any
+    let whitespace_pos = first_line.find(' ').unwrap();
+    let (comp1, comp2) = first_line.split_at(whitespace_pos);
+
     let shebang: &str;
 
-    // we dont want to take shebang flags if there is any
-    let shebang_compenents: Vec<&str> = shebang_line
-        .trim_end()
-        .trim_start_matches(|c| c == '#' || c == '!')
-        .splitn(2, ' ')
-        .collect();
-    if !shebang_line.contains("/env ") || shebang_line.ends_with("env") {
+    if !first_line.contains("/env ") || first_line.ends_with("env") {
         // take the first shebang compenent
-        shebang = shebang_compenents.first().unwrap();
+        shebang = comp1;
     } else {
         // take the command after env
-        shebang = shebang_compenents.last().unwrap();
+        shebang = comp2;
     }
 
     match shebang {

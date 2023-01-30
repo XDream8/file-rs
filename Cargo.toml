@@ -1,6 +1,6 @@
 [package]
 name = "file-rs"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["XDream8 <WolfsDream@proton.me>"]
 edition = "2021"
 license = "MIT"
@@ -10,6 +10,8 @@ description = "a tool for determining file types"
 
 [dependencies]
 mime_guess = "2.0.4"
+num_cpus = "1.0"
+rayon = "1.6.1"
 seahorse = "2.1"
 
 [profile.release]
