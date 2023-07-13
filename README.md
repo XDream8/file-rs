@@ -9,6 +9,14 @@
 - [x] determining file type
 - [x] determining file's mime type
 
+## building from git source
+```sh
+$ git clone https://codeberg.org/XDream8/file-rs
+$ cd file-rs
+$ cargo build --profile optimized
+$ ./target/optimized/file-rs
+```
+
 ## usage
 
 ```sh
