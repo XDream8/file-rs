@@ -1,0 +1,43 @@
+pipeline:
+  test:
+    group: test
+    image: rust:alpine
+    when:
+      - event: [push, pullrequest]
+    commands:
+      - rustup default stable
+      - rustup target add ${TARGET}
+      - rustup component add clippy
+      - cargo test
+      - cargo clippy
+
+  build:
+    group: build
+    image: rust:alpine
+    when:
+      event: tag
+    commands:
+      - rustup default stable
+      - rustup target add ${TARGET}
+      - cargo build --profile optimized --target ${TARGET}
+      - tar -zcvf file-rs-${TARGET}.tar.gz target/${TARGET}/optimized/file-rs
+
+  publish:
+    image: woodpeckerci/plugin-gitea-release
+    when:
+      event: tag
+    settings:
+      base_url: https://codeberg.org
+      files:
+        - "target/${TARGET}/optimized/file-rs-${TARGET}.tar.gz"
+      file-exists: overwrite
+      api_key:
+        from_secret: CODEBERG_ACCESS_TOKEN
+      target: main
+      title: file-rs
+      skip_verify: true
+
+matrix:
+  TARGET:
+    - x86_64-unknown-linux-musl
+    - x86_64-unknown-linux-gnu
