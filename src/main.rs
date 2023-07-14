@@ -29,6 +29,11 @@ fn main() {
             Flag::new("extension", FlagType::Bool)
                 .description("show file's extension")
                 .alias("ext"),
+        )
+        .flag(
+            Flag::new("jobs", FlagType::Int)
+                .description("number of jobs to run")
+                .alias("j"),
         );
 
     app.run(args);
@@ -49,11 +54,13 @@ fn action(c: &Context) {
 
     let show_mime_type: bool = c.bool_flag("mime-type");
     let show_extension: bool = c.bool_flag("extension");
+    let jobs: usize = c.int_flag("jobs").unwrap_or(num_cpus::get() as isize) as usize;
 
+    // build thread pool
     ThreadPoolBuilder::new()
-        .num_threads(num_cpus::get())
+        .num_threads(jobs)
         .build_global()
-        .unwrap();
+        .expect("Failed to build thread pool");
 
     // main thing
     scope(|s| {
