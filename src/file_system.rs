@@ -7,7 +7,7 @@ use std::os::unix::fs::FileTypeExt;
 
 pub fn get_mime_type(path: &Path) -> String {
     match mime_guess::from_path(path).first() {
-        Some(mime) => format!("{}", mime),
+        Some(mime) => mime.to_string(),
         // if mime type is not found, just show it as a plain text
         _ => {
             if get_file_type(path) == "directory" {
@@ -21,7 +21,7 @@ pub fn get_mime_type(path: &Path) -> String {
 
 pub fn get_file_extension(path: &Path) -> String {
     match path.extension().and_then(OsStr::to_str) {
-        Some(ext) => format!("{}", ext),
+        Some(ext) => ext.to_string(),
         None => "???".to_string(),
     }
 }
