@@ -43,3 +43,41 @@ pub fn get_file_type(path: &Path) -> String {
         _ => "???".to_owned(),
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use std::path::Path;
+    use super::{get_mime_type , get_file_extension, get_file_type};
+
+    #[test]
+    fn test_get_mime_type() {
+        assert_eq!(get_mime_type(Path::new("Cargo.toml")), "text/x-toml");
+        assert_eq!(get_mime_type(Path::new("Cargo.lock")), "text/plain");
+        assert_eq!(get_mime_type(Path::new("benchmark.sh")), "application/x-sh");
+        assert_eq!(get_mime_type(Path::new("LICENSE")), "text/plain");
+        assert_eq!(get_mime_type(Path::new("src")), "inode/directory");
+    }
+
+    #[test]
+    fn test_get_file_extension() {
+        assert_eq!(get_file_extension(Path::new("Cargo.toml")), "toml");
+        assert_eq!(get_file_extension(Path::new("Cargo.lock")), "lock");
+        assert_eq!(get_file_extension(Path::new("benchmark.sh")), "sh");
+    }
+
+    #[test]
+    fn test_bad_get_file_extension() {
+        assert_eq!(get_file_extension(Path::new("LICENSE")), "???");
+        assert_eq!(get_file_extension(Path::new("src")), "???");
+    }
+
+    #[test]
+    fn test_get_file_type() {
+        assert_eq!(get_file_type(Path::new("Cargo.toml")), "ASCII text");
+        assert_eq!(get_file_type(Path::new("Cargo.lock")), "ASCII text");
+        assert_eq!(get_file_type(Path::new("benchmark.sh")), "ASCII text");
+        assert_eq!(get_file_type(Path::new("LICENSE")), "ASCII text");
+        assert_eq!(get_file_type(Path::new("src")), "directory");
+    }
+
+}
