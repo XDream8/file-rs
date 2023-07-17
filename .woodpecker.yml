@@ -11,7 +11,7 @@ pipeline:
       - rustup default stable
       - rustup target add ${TARGET}
       - rustup component add clippy
-      - cargo test
+      - cargo test --bin file-rs
       - cargo clippy
 
   build:
@@ -69,7 +69,7 @@ matrix:
     - IMAGE: rust:latest
       TARGET: aarch64-unknown-linux-gnu
       PACKAGE_MANAGER: apt
-      INSTALL_CMD: install
+      INSTALL_CMD: "install -y"
       PACKAGE: gcc-aarch64-linux-gnu
       CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
     # - TARGET: x86_64-pc-windows-gnu
