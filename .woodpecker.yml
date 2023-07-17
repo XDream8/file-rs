@@ -58,7 +58,7 @@ matrix:
       TARGET: aarch64-unknown-linux-musl
       PACKAGE_MANAGER: apk
       INSTALL_CMD: add
-      PACKAGE: "gcc-aarch64-none-elf musl-dev"
+      PACKAGE: "gcc-aarch64-none-elf musl-dev binutils-aarch64"
       CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-none-elf-gcc
     ## gnu/glibc
     - IMAGE: rust:latest
@@ -70,7 +70,7 @@ matrix:
       TARGET: aarch64-unknown-linux-gnu
       PACKAGE_MANAGER: apt
       INSTALL_CMD: "install -y"
-      PACKAGE: gcc-aarch64-linux-gnu
+      PACKAGE: "gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu"
       CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
     # - TARGET: x86_64-pc-windows-gnu
     #   IMAGE: rust:latest
