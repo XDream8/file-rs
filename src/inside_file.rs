@@ -35,14 +35,16 @@ pub fn get_type_from_shebang(path: &Path) -> String {
 }
 
 fn evaluate_shebang(shebang: &str) -> &str {
-    if shebang.contains("bash") {
-        "Bourne-Again shell"
-    } else if shebang.contains("sh") {
-        "POSIX shell"
-    } else if shebang.contains("python") {
-        "Python"
-    } else {
-        shebang
+    match shebang {
+        _ if shebang.contains("bash") => "Bourne-Again shell",
+        _ if shebang.contains("tcsh") => "Tenex C shell",
+        _ if shebang.contains("csh") => "C shell",
+        _ if shebang.contains("ash") => "Neil Brown's ash",
+        _ if shebang.contains("ksh") => "Korn shell",
+        _ if shebang.contains("zsh") => "Paul Falstad's zsh",
+        _ if shebang.contains("sh") => "POSIX shell",
+        _ if shebang.contains("python") => "Python",
+        _ => shebang,
     }
 }
 
@@ -53,12 +55,17 @@ pub mod tests {
     #[test]
     fn test_evaluate_shebang() {
         assert_eq!(evaluate_shebang("bash"), "Bourne-Again shell");
+        assert_eq!(evaluate_shebang("tcsh"), "Tenex C shell");
+        assert_eq!(evaluate_shebang("csh"), "C shell");
+        assert_eq!(evaluate_shebang("ash"), "Neil Brown's ash");
+        assert_eq!(evaluate_shebang("ksh"), "Korn shell");
+        assert_eq!(evaluate_shebang("zsh"), "Paul Falstad's zsh");
         assert_eq!(evaluate_shebang("sh"), "POSIX shell");
         assert_eq!(evaluate_shebang("python"), "Python");
     }
 
     #[test]
-    fn test_bad_evaluate_shebang(){
-        assert_eq!(evaluate_shebang("unknown"),"unknown");
+    fn test_bad_evaluate_shebang() {
+        assert_eq!(evaluate_shebang("unknown"), "unknown");
     }
 }
