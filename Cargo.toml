@@ -1,5 +1,3 @@
-cargo-features = ["profile-rustflags"]
-
 [package]
 name = "file-rs"
 version = "0.2.2"
@@ -31,5 +29,3 @@ lto = "fat"
 codegen-units = 1
 strip = true
 opt-level = 3
-## always build a static binary for optimized profile
-rustflags = ["-C", "target-feature=+crt-static"]
