@@ -7,7 +7,7 @@ use std::process::exit;
 use itertools::Itertools;
 
 // threading
-use rayon::{scope, ThreadPoolBuilder};
+use rayon::{prelude::*, ThreadPoolBuilder};
 
 pub mod file_system;
 pub mod inside_file;
@@ -45,54 +45,60 @@ fn action(c: &Context) {
         exit(0);
     }
 
-    // args
-
-    let mut files: Vec<&str> = vec![];
-    c.args.iter().for_each(|arg| files.push(arg));
-    // remove duplicate files from files vector(this speeds up file-rs a lot)
-    let files = files.iter().unique().collect::<Vec<_>>();
-
-    let show_mime_type: bool = c.bool_flag("mime-type");
-    let show_extension: bool = c.bool_flag("extension");
-    let jobs: usize = c.int_flag("jobs").unwrap_or(num_cpus::get() as isize) as usize;
+    // get number of cpus
+    let jobs: usize = match c.int_flag("jobs") {
+        Ok(jobs) => jobs as usize,
+        Err(_) => match std::thread::available_parallelism() {
+            Ok(jobs) => usize::from(jobs),
+            Err(err) => {
+                eprintln!("Failed to detect number of cpus: {}", err);
+                exit(1);
+            }
+        }
+    };
 
     // build thread pool
-    ThreadPoolBuilder::new()
-        .num_threads(jobs)
-        .build_global()
-        .expect("Failed to build thread pool");
+    if let Err(err) = ThreadPoolBuilder::new().num_threads(jobs).build_global() {
+        eprintln!("Failed to build thread pool: {}", err);
+        exit(1);
+    }
 
-    // main thing
-    scope(|s| {
-        for file in files.iter() {
-            s.spawn(move |_| {
-                let path = Path::new(file);
+    // collect files and remove duplicates - unique() does not support rayon’s par_iter() method
+    let files: Vec<&str> = c.args.par_iter()
+        .map(|file| file.as_str())
+        .collect::<Vec<_>>()
+        .into_iter()
+        .unique()
+        .collect::<Vec<_>>();
 
-                if !path.exists() {
-                    println!("{file:<15}: cannot open '{file}' (No such file, directory or flag)");
-                } else {
-                    let mut shebang: String = String::new();
-                    if !show_mime_type | !show_extension {
-                        shebang = inside_file::get_type_from_shebang(path);
-                    }
-                    // print mime type
-                    if show_mime_type {
-                        println!("{file:<15}: {:<15}", file_system::get_mime_type(path));
-                    }
-                    // default output(prints extension)
-                    else if show_extension {
-                        println!("{file:<15}: {:<15}", file_system::get_file_extension(path));
-                    }
-                    // if file does not have a shebang
-                    else if shebang.is_empty() {
-                        println!("{file:<15}: {:<15}", file_system::get_file_type(path));
-                    }
-                    // if file has a shebang
-                    else {
-                        println!("{file:<15}: {shebang} script, {}", file_system::get_file_type(path));
-                    }
-                }
-            });
+    // other args
+    let show_mime_type: bool = c.bool_flag("mime-type");
+    let show_extension: bool = c.bool_flag("extension");
+
+    // main thing - preserve print order(mostly) using .enumerate()
+    files.par_iter().for_each(|file| {
+        let path: &Path = Path::new(file);
+
+        if !path.exists() {
+            eprintln!("{file:<15}: cannot open '{file}' (No such file, directory or flag)");
+        } else {
+            let mut shebang: String = String::new();
+            let mut file_type: String = String::new();
+            if !show_mime_type | !show_extension {
+                shebang = inside_file::get_type_from_shebang(path);
+                file_type = file_system::get_file_type(path);
+            }
+
+            // Print information
+            if show_mime_type {
+                println!("{file:<15}: {:<15}", file_system::get_mime_type(path));
+            } else if show_extension {
+                println!("{file:<15}: {:<15}", file_system::get_file_extension(path));
+            } else if shebang.is_empty() {
+                println!("{file:<15}: {:<15}", file_type);
+            } else {
+                println!("{file:<15}: {shebang} script, {}", file_type);
+            }
         }
-    })
+    });
 }

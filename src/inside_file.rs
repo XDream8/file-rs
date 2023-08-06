@@ -6,14 +6,14 @@ use std::{
 
 pub fn get_type_from_shebang(path: &Path) -> String {
     // Open the file in read-only mode (ignoring errors).
-    let file = File::open(path).unwrap();
-    let mut reader = BufReader::new(file);
+    let file: File = File::open(path).unwrap();
+    let mut reader: BufReader<File> = BufReader::new(file);
 
-    let mut first_line = String::new();
+    let mut first_line: String = String::new();
     let _ = reader.read_line(&mut first_line);
 
     // return empty string if file does not have a shebang
-    if !first_line.contains("#!") {
+    if !first_line.starts_with("#!") {
         return String::new();
     }
 
@@ -39,6 +39,7 @@ fn evaluate_shebang(shebang: &str) -> &str {
         _ if shebang.contains("bash") => "Bourne-Again shell",
         _ if shebang.contains("tcsh") => "Tenex C shell",
         _ if shebang.contains("csh") => "C shell",
+        _ if shebang.contains("yash") => "Yet-Another shell",
         _ if shebang.contains("ash") => "Neil Brown's ash",
         _ if shebang.contains("ksh") => "Korn shell",
         _ if shebang.contains("zsh") => "Paul Falstad's zsh",
@@ -60,6 +61,7 @@ pub mod tests {
         assert_eq!(evaluate_shebang("ash"), "Neil Brown's ash");
         assert_eq!(evaluate_shebang("ksh"), "Korn shell");
         assert_eq!(evaluate_shebang("zsh"), "Paul Falstad's zsh");
+        assert_eq!(evaluate_shebang("yash"), "Yet-Another shell");
         assert_eq!(evaluate_shebang("sh"), "POSIX shell");
         assert_eq!(evaluate_shebang("python"), "Python");
     }
