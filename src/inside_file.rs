@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-pub fn get_type_from_shebang(path: &Path) -> String {
+pub fn get_type_from_shebang(path: &Path) -> Option<String> {
     // Open the file in read-only mode (ignoring errors).
     let file: File = File::open(path).unwrap();
     let mut reader: BufReader<File> = BufReader::new(file);
@@ -14,7 +14,7 @@ pub fn get_type_from_shebang(path: &Path) -> String {
 
     // return empty string if file does not have a shebang
     if !first_line.starts_with("#!") {
-        return String::new();
+        return None;
     }
 
     // we dont want to take shebang flags if there is any
@@ -31,7 +31,7 @@ pub fn get_type_from_shebang(path: &Path) -> String {
         shebang_compenents.last().unwrap()
     };
 
-    evaluate_shebang(shebang).to_owned()
+    Some(evaluate_shebang(shebang).to_owned())
 }
 
 fn evaluate_shebang(shebang: &str) -> &str {

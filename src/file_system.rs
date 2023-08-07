@@ -62,8 +62,8 @@ pub fn get_file_type(path: &Path) -> String {
 
 #[cfg(test)]
 pub mod tests {
+    use super::{get_file_extension, get_file_type, get_mime_type};
     use std::path::Path;
-    use super::{get_mime_type , get_file_extension, get_file_type};
 
     #[test]
     #[cfg(feature = "mime_guess")]
@@ -102,5 +102,4 @@ pub mod tests {
         assert_eq!(get_file_type(Path::new("LICENSE")), "ASCII text");
         assert_eq!(get_file_type(Path::new("src")), "directory");
     }
-
 }

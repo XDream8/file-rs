@@ -23,7 +23,7 @@ fn main() {
         .flag(
             Flag::new("brief", FlagType::Bool)
                 .description("do not prepend filenames to output lines")
-                .alias("b")
+                .alias("b"),
         )
         .flag(
             Flag::new("jobs", FlagType::Int)
@@ -44,7 +44,7 @@ fn main() {
             Flag::new("seperator", FlagType::String)
                 .description("use string as separator instead of `:'")
                 .alias("F"),
-        ) ;
+        );
 
     app.run(args);
 }
@@ -64,7 +64,7 @@ fn action(c: &Context) {
                 eprintln!("Failed to detect number of cpus: {}", err);
                 exit(1);
             }
-        }
+        },
     };
 
     // build thread pool
@@ -74,7 +74,9 @@ fn action(c: &Context) {
     }
 
     // collect files and remove duplicates - unique() does not support rayon’s par_iter() method
-    let files: Vec<&str> = c.args.par_iter()
+    let files: Vec<&str> = c
+        .args
+        .par_iter()
         .map(|file| file.as_str())
         .collect::<Vec<_>>()
         .into_iter()
@@ -97,24 +99,21 @@ fn action(c: &Context) {
 
         if !path.exists() {
             if !brief {
-                eprintln!("{file:<15}{seperator} cannot open '{file}' (No such file, directory or flag)");
+                eprintln!(
+                    "{file:<15}{seperator} cannot open '{file}' (No such file, directory or flag)"
+                );
             } else {
                 eprintln!("cannot open '{file}' (No such file, directory or flag)");
             }
         } else {
-            let mut shebang: String = String::new();
-            if !show_mime_type | !show_extension {
-                shebang = inside_file::get_type_from_shebang(path);
-            }
-
             let info = if show_mime_type {
                 file_system::get_mime_type(path)
             } else if show_extension {
-               file_system::get_file_extension(path)
-            } else if shebang.is_empty() {
-                file_system::get_file_type(path)
-            } else {
+                file_system::get_file_extension(path)
+            } else if let Some(shebang) = inside_file::get_type_from_shebang(path) {
                 format!("{shebang} script, {}", file_system::get_file_type(path))
+            } else {
+                file_system::get_file_type(path)
             };
 
             // Print information

@@ -20,9 +20,9 @@ fn main() {
     }
 
     // Set the feature flag for the selected feature
-        if cfg!(feature = "mime_guess") {
-            println!("cargo:rustc-cfg=feature=\"mime_guess\"");
-        }
+    if cfg!(feature = "mime_guess") {
+        println!("cargo:rustc-cfg=feature=\"mime_guess\"");
+    }
 
     if cfg!(feature = "infer") {
         println!("cargo:rustc-cfg=feature=\"infer\"");
