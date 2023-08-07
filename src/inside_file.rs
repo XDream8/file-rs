@@ -4,9 +4,10 @@ use std::{
     path::Path,
 };
 
+#[inline(always)]
 pub fn get_type_from_shebang(path: &Path) -> Option<String> {
-    // Open the file in read-only mode (ignoring errors).
-    let file: File = File::open(path).unwrap();
+    // Open the file in read-only mode (handling errors).
+    let file: File = File::open(path).ok()?;
     let mut reader: BufReader<File> = BufReader::new(file);
 
     let mut first_line: String = String::new();
@@ -18,22 +19,20 @@ pub fn get_type_from_shebang(path: &Path) -> Option<String> {
     }
 
     // we dont want to take shebang flags if there is any
-    let shebang_compenents: Vec<&str> = first_line
-        .trim_end()
-        .trim_start_matches(|c| c == '#' || c == '!')
-        .splitn(2, ' ')
-        .collect();
+    let first_line = first_line.trim_start_matches(|c| c == '#' || c == '!');
+
     let shebang: &str = if !first_line.contains("/env ") || first_line.ends_with("env") {
-        // take the first shebang compenent
-        shebang_compenents.first().unwrap()
+        // take the first shebang component
+        first_line.split(' ').next().unwrap_or_default()
     } else {
         // take the command after env
-        shebang_compenents.last().unwrap()
+        first_line.splitn(2, ' ').last().unwrap_or_default()
     };
 
     Some(evaluate_shebang(shebang).to_owned())
 }
 
+#[inline]
 fn evaluate_shebang(shebang: &str) -> &str {
     match shebang {
         _ if shebang.contains("bash") => "Bourne-Again shell",
@@ -58,10 +57,10 @@ pub mod tests {
         assert_eq!(evaluate_shebang("bash"), "Bourne-Again shell");
         assert_eq!(evaluate_shebang("tcsh"), "Tenex C shell");
         assert_eq!(evaluate_shebang("csh"), "C shell");
+        assert_eq!(evaluate_shebang("yash"), "Yet-Another shell");
         assert_eq!(evaluate_shebang("ash"), "Neil Brown's ash");
         assert_eq!(evaluate_shebang("ksh"), "Korn shell");
         assert_eq!(evaluate_shebang("zsh"), "Paul Falstad's zsh");
-        assert_eq!(evaluate_shebang("yash"), "Yet-Another shell");
         assert_eq!(evaluate_shebang("sh"), "POSIX shell");
         assert_eq!(evaluate_shebang("python"), "Python");
     }
