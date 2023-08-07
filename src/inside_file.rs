@@ -6,7 +6,7 @@ use std::{
 
 #[inline(always)]
 pub fn get_type_from_shebang(path: &Path) -> Option<String> {
-    // Open the file in read-only mode (handling errors).
+    // Open the file in read-only mode (if we encounter an error it returns None).
     let file: File = File::open(path).ok()?;
     let mut reader: BufReader<File> = BufReader::new(file);
 
@@ -19,7 +19,9 @@ pub fn get_type_from_shebang(path: &Path) -> Option<String> {
     }
 
     // we dont want to take shebang flags if there is any
-    let first_line = first_line.trim_start_matches(|c| c == '#' || c == '!');
+    let first_line: &str = first_line
+        .trim_start_matches(|c| c == '#' || c == '!')
+        .trim();
 
     let shebang: &str = if !first_line.contains("/env ") || first_line.ends_with("env") {
         // take the first shebang component

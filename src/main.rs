@@ -108,15 +108,11 @@ fn action(c: &Context) {
                 file_system::get_mime_type(path)
             } else if show_extension {
                 file_system::get_file_extension(path).to_string()
+            } else if let Some(shebang) = inside_file::get_type_from_shebang(path) {
+                format!("{shebang} script, {}", file_system::get_file_type(path))
             } else {
-                // handle result
-                match inside_file::get_type_from_shebang(path) {
-                    Some(shebang) => {
-                        format!("{shebang} script, {}", file_system::get_file_type(path))
-                    }
-                    // if file does not have shebang
-                    None => file_system::get_file_type(path),
-                }
+                // if file does not have shebang or we encountered an error
+                file_system::get_file_type(path)
             };
 
             // Print information
