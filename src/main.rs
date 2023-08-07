@@ -21,9 +21,14 @@ fn main() {
         .usage(format!("{} [file(s)] [args]", env!("CARGO_PKG_NAME")))
         .action(action)
         .flag(
-            Flag::new("mime-type", FlagType::Bool)
-                .description("show file's mime type")
-                .alias("mt"),
+            Flag::new("brief", FlagType::Bool)
+                .description("do not prepend filenames to output lines")
+                .alias("b")
+        )
+        .flag(
+            Flag::new("jobs", FlagType::Int)
+                .description("number of jobs to run")
+                .alias("j"),
         )
         .flag(
             Flag::new("extension", FlagType::Bool)
@@ -31,10 +36,15 @@ fn main() {
                 .alias("ext"),
         )
         .flag(
-            Flag::new("jobs", FlagType::Int)
-                .description("number of jobs to run")
-                .alias("j"),
-        );
+            Flag::new("mime-type", FlagType::Bool)
+                .description("show file's mime type")
+                .alias("mt"),
+        )
+        .flag(
+            Flag::new("seperator", FlagType::String)
+                .description("use string as separator instead of `:'")
+                .alias("F"),
+        ) ;
 
     app.run(args);
 }
@@ -72,32 +82,46 @@ fn action(c: &Context) {
         .collect::<Vec<_>>();
 
     // other args
+    let brief: bool = c.bool_flag("brief");
     let show_mime_type: bool = c.bool_flag("mime-type");
     let show_extension: bool = c.bool_flag("extension");
+
+    let seperator: String = match c.string_flag("seperator") {
+        Ok(sep) => sep,
+        Err(_) => String::from(":"),
+    };
 
     // main thing - preserve print order(mostly) using .enumerate()
     files.par_iter().for_each(|file| {
         let path: &Path = Path::new(file);
 
         if !path.exists() {
-            eprintln!("{file:<15}: cannot open '{file}' (No such file, directory or flag)");
+            if !brief {
+                eprintln!("{file:<15}{seperator} cannot open '{file}' (No such file, directory or flag)");
+            } else {
+                eprintln!("cannot open '{file}' (No such file, directory or flag)");
+            }
         } else {
             let mut shebang: String = String::new();
-            let mut file_type: String = String::new();
             if !show_mime_type | !show_extension {
                 shebang = inside_file::get_type_from_shebang(path);
-                file_type = file_system::get_file_type(path);
             }
 
-            // Print information
-            if show_mime_type {
-                println!("{file:<15}: {:<15}", file_system::get_mime_type(path));
+            let info = if show_mime_type {
+                file_system::get_mime_type(path)
             } else if show_extension {
-                println!("{file:<15}: {:<15}", file_system::get_file_extension(path));
+               file_system::get_file_extension(path)
             } else if shebang.is_empty() {
-                println!("{file:<15}: {:<15}", file_type);
+                file_system::get_file_type(path)
             } else {
-                println!("{file:<15}: {shebang} script, {}", file_type);
+                format!("{shebang} script, {}", file_system::get_file_type(path))
+            };
+
+            // Print information
+            if !brief {
+                println!("{file:<15}{seperator} {info:<15}")
+            } else {
+                println!("{info}")
             }
         }
     });
