@@ -107,7 +107,7 @@ fn action(c: &Context) {
             let info = if show_mime_type {
                 file_system::get_mime_type(path)
             } else if show_extension {
-                file_system::get_file_extension(path).to_string()
+                file_system::get_file_extension(path)
             } else if let Some(shebang) = inside_file::get_type_from_shebang(path) {
                 format!("{shebang} script, {}", file_system::get_file_type(path))
             } else {

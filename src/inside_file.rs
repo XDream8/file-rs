@@ -35,7 +35,7 @@ pub fn get_type_from_shebang(path: &Path) -> Option<String> {
 }
 
 #[inline]
-fn evaluate_shebang(shebang: &str) -> &str {
+fn evaluate_shebang(shebang: &str) -> String {
     match shebang {
         _ if shebang.contains("bash") => "Bourne-Again shell",
         _ if shebang.contains("tcsh") => "Tenex C shell",
@@ -48,6 +48,7 @@ fn evaluate_shebang(shebang: &str) -> &str {
         _ if shebang.contains("python") => "Python",
         _ => shebang,
     }
+    .to_owned()
 }
 
 #[cfg(test)]

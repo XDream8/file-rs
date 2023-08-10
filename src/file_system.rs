@@ -38,8 +38,11 @@ pub fn get_mime_type(path: &Path) -> String {
 }
 
 #[inline(always)]
-pub fn get_file_extension(path: &Path) -> &str {
-    path.extension().and_then(OsStr::to_str).unwrap_or("???")
+pub fn get_file_extension(path: &Path) -> String {
+    path.extension()
+        .and_then(OsStr::to_str)
+        .unwrap_or("???")
+        .to_owned()
 }
 
 #[inline(always)]
