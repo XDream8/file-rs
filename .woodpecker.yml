@@ -1,4 +1,4 @@
-pipeline:
+steps:
   test:
     group: test
     image: ${IMAGE}
