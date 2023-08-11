@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 // for cli-args
 use seahorse::{App, Context, Flag, FlagType};
 use std::{env, path::Path, process::exit};
@@ -16,7 +18,7 @@ fn main() {
     let app = App::new(env!("CARGO_PKG_NAME"))
         .description(env!("CARGO_PKG_DESCRIPTION"))
         .version(env!("CARGO_PKG_VERSION"))
-        .usage(format!("{} [file(s)] [args]", env!("CARGO_PKG_NAME")))
+        .usage(format!("{} [args] [file(s)]", env!("CARGO_PKG_NAME")))
         .action(action)
         .flag(
             Flag::new("brief", FlagType::Bool)
@@ -24,14 +26,14 @@ fn main() {
                 .alias("b"),
         )
         .flag(
-            Flag::new("jobs", FlagType::Int)
-                .description("number of jobs to run")
-                .alias("j"),
-        )
-        .flag(
             Flag::new("extension", FlagType::Bool)
                 .description("show file's extension")
                 .alias("ext"),
+        )
+        .flag(
+            Flag::new("jobs", FlagType::Int)
+                .description("number of jobs to run")
+                .alias("j"),
         )
         .flag(
             Flag::new("mime-type", FlagType::Bool)
@@ -48,48 +50,32 @@ fn main() {
 }
 
 fn action(c: &Context) {
+    // show help if no args are passed
     if c.args.is_empty() {
         c.help();
         exit(0);
     }
 
-    // get number of cpus
-    let jobs: usize = match c.int_flag("jobs") {
-        Ok(jobs) => jobs as usize,
-        Err(_) => match std::thread::available_parallelism() {
-            Ok(jobs) => usize::from(jobs),
-            Err(err) => {
-                eprintln!("Failed to detect number of cpus: {}", err);
-                exit(1);
-            }
-        },
-    };
-
-    // build thread pool
-    if let Err(err) = ThreadPoolBuilder::new().num_threads(jobs).build_global() {
-        eprintln!("Failed to build thread pool: {}", err);
-        exit(1);
+    // build thread pool according to jobs flag - otherwise rayon decides on how many jobs to use
+    if let Ok(jobs) = c.int_flag("jobs") {
+        if let Err(err) = ThreadPoolBuilder::new()
+            .num_threads(jobs as usize)
+            .build_global()
+        {
+            eprintln!("Failed to build thread pool: {}", err);
+            exit(1);
+        }
     }
 
     // collect files and remove duplicates - unique() does not support rayon’s par_iter() method
-    let files: Vec<&str> = c
-        .args
-        .par_iter()
-        .map(|file| file.as_str())
-        .collect::<Vec<_>>()
-        .into_iter()
-        .unique()
-        .collect::<Vec<_>>();
+    let files: Vec<&String> = c.args.iter().unique().collect::<Vec<_>>();
 
     // other args
     let brief: bool = c.bool_flag("brief");
     let show_mime_type: bool = c.bool_flag("mime-type");
     let show_extension: bool = c.bool_flag("extension");
 
-    let seperator: String = match c.string_flag("seperator") {
-        Ok(sep) => sep,
-        Err(_) => String::from(":"),
-    };
+    let seperator: String = c.string_flag("seperator").unwrap_or(String::from(":"));
 
     // main thing
     files.par_iter().for_each(|file| {
@@ -104,7 +90,7 @@ fn action(c: &Context) {
                 eprintln!("cannot open '{file}' (No such file, directory or flag)");
             }
         } else {
-            let info = if show_mime_type {
+            let info: String = if show_mime_type {
                 file_system::get_mime_type(path)
             } else if show_extension {
                 file_system::get_file_extension(path)
