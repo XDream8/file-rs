@@ -77,36 +77,57 @@ fn action(c: &Context) {
 
     let seperator: String = c.string_flag("seperator").unwrap_or(String::from(":"));
 
+    // avoid repeated computations(mini optimizations)
+    let info_function = if show_mime_type {
+        file_system::get_mime_type
+    } else if show_extension {
+        file_system::get_file_extension
+    } else {
+        file_system::get_file_type
+    };
+
+    let logging_function = if brief {
+        brief_logging
+    } else {
+        standard_logging
+    };
+
+    let file_open_error_function = if brief {
+        brief_file_open_error
+    } else {
+        standard_file_open_error
+    };
+
     // main thing
     files.par_iter().for_each(|file| {
         let path: &Path = Path::new(file);
 
         if !path.exists() {
-            if !brief {
-                eprintln!(
-                    "{file:<15}{seperator} cannot open '{file}' (No such file, directory or flag)"
-                );
-            } else {
-                eprintln!("cannot open '{file}' (No such file, directory or flag)");
-            }
+            file_open_error_function(file, &seperator)
         } else {
-            let info: String = if show_mime_type {
-                file_system::get_mime_type(path)
-            } else if show_extension {
-                file_system::get_file_extension(path)
-            } else if let Some(shebang) = inside_file::get_type_from_shebang(path) {
+            let info: String = if let Some(shebang) = inside_file::get_type_from_shebang(path) {
                 format!("{shebang} script, {}", file_system::get_file_type(path))
             } else {
-                // if file does not have shebang or we encountered an error
-                file_system::get_file_type(path)
+                info_function(path)
             };
 
             // Print information
-            if !brief {
-                println!("{file:<15}{seperator} {info:<15}")
-            } else {
-                println!("{info}")
-            }
+            logging_function(file, &seperator, &info)
         }
     });
+}
+
+fn standard_logging(file: &String, seperator: &String, info: &String) {
+    println!("{file:<15}{seperator} {info:<15}")
+}
+fn brief_logging(_: &String, _: &String, info: &String) {
+    println!("{info}")
+}
+
+fn standard_file_open_error(file: &String, seperator: &String) {
+    eprintln!("{file:<15}{seperator} cannot open '{file}' (No such file, directory or flag)");
+}
+
+fn brief_file_open_error(file: &String, _: &String) {
+    eprintln!("cannot open '{file}' (No such file, directory or flag)");
 }
