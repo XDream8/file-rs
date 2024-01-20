@@ -77,15 +77,7 @@ fn action(c: &Context) {
 
     let seperator: String = c.string_flag("seperator").unwrap_or(String::from(":"));
 
-    // avoid repeated computations(mini optimizations)
-    let info_function = if show_mime_type {
-        file_system::get_mime_type
-    } else if show_extension {
-        file_system::get_file_extension
-    } else {
-        file_system::get_file_type
-    };
-
+    // avoid repeated computations(mini optimization)
     let logging_function = if brief {
         brief_logging
     } else {
@@ -105,10 +97,15 @@ fn action(c: &Context) {
         if !path.exists() {
             file_open_error_function(file, &seperator)
         } else {
-            let info: String = if let Some(shebang) = inside_file::get_type_from_shebang(path) {
+            let info: String = if show_mime_type {
+                file_system::get_mime_type(path)
+            } else if show_extension {
+                file_system::get_file_extension(path)
+            } else if let Some(shebang) = inside_file::get_type_from_shebang(path) {
                 format!("{shebang} script, {}", file_system::get_file_type(path))
             } else {
-                info_function(path)
+                // if file does not have shebang or we encountered an error
+                file_system::get_file_type(path)
             };
 
             // Print information
