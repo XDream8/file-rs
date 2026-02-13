@@ -1,52 +1,4 @@
-steps:
-  test:
-    group: test
-    image: ${IMAGE}
-    environment:
-      - CARGO_TERM_COLOR=always
-      - CARGO_BUILD_TARGET=${TARGET}
-    commands:
-      - ${PACKAGE_MANAGER} update
-      - ${PACKAGE_MANAGER} ${INSTALL_CMD} -q ${PACKAGE}
-      - rustup default stable
-      - rustup target add ${TARGET}
-      - rustup component add clippy
-      - cargo test --bin file-rs
-      - cargo clippy
-
-  build:
-    group: build
-    image: ${IMAGE}
-    when:
-      event: tag
-    environment:
-      - CARGO_TERM_COLOR=always
-      - CARGO_BUILD_TARGET=${TARGET}
-    commands:
-      - ${PACKAGE_MANAGER} update
-      - ${PACKAGE_MANAGER} ${INSTALL_CMD} -q ${PACKAGE}
-      - rustup default stable
-      - rustup target add ${TARGET}
-      - cargo build --profile optimized
-      - tar -zcvf file-rs-${TARGET}.tar.gz target/${TARGET}/optimized/file-rs
-
-  publish:
-    group: publish
-    image: woodpeckerci/plugin-gitea-release
-    when:
-      event: tag
-    settings:
-      base_url: https://codeberg.org
-      files:
-        - "file-rs-${TARGET}.tar.gz"
-      file-exists: overwrite
-      api_key:
-        from_secret: CODEBERG_ACCESS_TOKEN
-      target: main
-      title: file-rs
-      skip_verify: true
-
-## only x86_64-unknown-linux-{musl, gnu} is enable for now
+## only x86_64-unknown-linux-{musl, gnu} is enabled for now
 matrix:
   include:
     ## musl
@@ -79,3 +31,57 @@ matrix:
     # - TARGET: x86_64-pc-windows-msvc
     #   IMAGE: rust:latest
     #   PACKAGE: windows/amd64
+
+when:
+  - event: push
+    branch: main
+  - event: tag
+
+steps:
+  test:
+    group: test
+    image: ${IMAGE}
+    environment:
+      CARGO_TERM_COLOR: always
+      CARGO_BUILD_TARGET: ${TARGET}
+    commands:
+      - ${PACKAGE_MANAGER} update
+      - ${PACKAGE_MANAGER} ${INSTALL_CMD} -q ${PACKAGE}
+      - rustup default stable
+      - rustup target add ${TARGET}
+      - rustup component add clippy
+      - cargo test --bin file-rs
+      - cargo clippy
+
+  build:
+    group: build
+    image: ${IMAGE}
+    when:
+      event: tag
+    environment:
+      CARGO_TERM_COLOR: always
+      CARGO_BUILD_TARGET: ${TARGET}
+    commands:
+      - ${PACKAGE_MANAGER} update
+      - ${PACKAGE_MANAGER} ${INSTALL_CMD} -q ${PACKAGE}
+      - rustup default stable
+      - rustup target add ${TARGET}
+      - cargo build --profile optimized
+      - tar -zcvf file-rs-${TARGET}.tar.gz target/${TARGET}/optimized/file-rs
+
+  publish:
+    group: publish
+    image: woodpeckerci/plugin-gitea-release
+    when:
+      event: tag
+    settings:
+      base_url: https://codeberg.org
+      files:
+        - "file-rs-${TARGET}.tar.gz"
+      file-exists: overwrite
+      api_key:
+        from_secret: CODEBERG_ACCESS_TOKEN
+      target: main
+      title: file-rs
+      skip_verify: true
+
