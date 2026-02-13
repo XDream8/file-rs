@@ -33,14 +33,16 @@ impl ScriptType {
     }
 }
 
+// strange situation
+// first_line is fetched as "[forbid(unsafe_code)]" when used on this file
+// probably a bug in this rust version: 1.93.0
 #[inline(always)]
 pub fn get_type_from_shebang(path: &Path) -> Option<String> {
     // Open the file in read-only mode (if we encounter an error it returns None).
-    let file: File = File::open(path).ok()?;
-    let mut reader: BufReader<File> = BufReader::new(file);
-
-    let mut first_line: String = String::new();
-    let _ = reader.read_line(&mut first_line);
+    let first_line: String = BufReader::new(File::open(path).ok()?)
+        .lines()
+        .next()? // Get the first line (Option<Result<String>>)
+        .ok()?; // Convert Result to Option
 
     // return empty string if file does not have a shebang
     if !first_line.starts_with("#!") {
@@ -48,9 +50,7 @@ pub fn get_type_from_shebang(path: &Path) -> Option<String> {
     }
 
     // we dont want to take shebang flags if there is any
-    let first_line: &str = first_line
-        .trim_start_matches(|c| c == '#' || c == '!')
-        .trim();
+    let first_line: &str = first_line.trim_start_matches("#!").trim();
 
     let shebang: &str = if !first_line.contains("/env ") || first_line.ends_with("env") {
         // take the first shebang component
@@ -63,7 +63,7 @@ pub fn get_type_from_shebang(path: &Path) -> Option<String> {
     Some(evaluate_shebang(shebang))
 }
 
-#[inline]
+#[inline(always)]
 fn evaluate_shebang(shebang: &str) -> String {
     match shebang {
         _ if shebang.contains("bash") => ScriptType::Bash.as_str(),

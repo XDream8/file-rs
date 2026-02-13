@@ -3,6 +3,8 @@
     <p>a tool for determining file types, an alternative to file</p>
 </div>
 
+[![file-rs](https://asciinema.org/a/787432.svg)](https://asciinema.org/a/787432)
+
 ## whats done
 
 - [x] determining file extension
@@ -35,9 +37,7 @@ $ file-rs Cargo.toml
 ```
 
 ## benchmarks
-- ‘file-rs‘ used mime-type library: infer
-- ‘file‘ version: 5.44
+- ‘file-rs‘ version: , used mime-type library: infer
+- ‘file‘ version: 5.46
 - runs: 100
-![Benchmark1](https://codeberg.org/XDream8/file-rs/raw/branch/main/bench1.png)
-![Benchmark2](https://codeberg.org/XDream8/file-rs/raw/branch/main/bench2.png)
-![Benchmark3](https://codeberg.org/XDream8/file-rs/raw/branch/main/bench3.png)
+[![file-rs vs file](https://asciinema.org/a/787434.svg)](https://asciinema.org/a/787434)

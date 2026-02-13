@@ -88,7 +88,7 @@ pub fn get_file_type(path: &Path) -> String {
 
 // sometimes .is_symlink() method does not work as expected
 // this function handles that situation
-#[inline]
+#[inline(always)]
 pub fn is_symlink(path: &Path) -> bool {
     if let Ok(metadata) = symlink_metadata(path) {
         metadata.file_type().is_symlink()
@@ -98,7 +98,7 @@ pub fn is_symlink(path: &Path) -> bool {
 }
 
 // for block and character special devices
-#[inline]
+#[inline(always)]
 pub fn get_device_numbers(metadata: &Metadata) -> (u64, u64) {
     let major: u64 = (metadata.rdev() >> 8) & 0xfff;
     let minor: u64 = metadata.rdev() & 0xff;
