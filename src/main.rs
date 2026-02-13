@@ -31,9 +31,9 @@ struct Cli {
     #[argh(option, short = 'j')]
     jobs: Option<usize>,
 
-    /// show file's mime type
+    /// use string as separator instead of `:'
     #[argh(option, short = 'F', default = "String::from(\":\")")]
-    seperator: String,
+    separator: String,
 
     /// file's to process
     #[argh(positional, greedy)]
@@ -77,7 +77,7 @@ fn main() {
     files.par_iter().for_each(|file| {
         let file_path: String = file.display().to_string();
         if !file.exists() {
-            file_open_error_function(&file_path, &cli.seperator)
+            file_open_error_function(&file_path, &cli.separator)
         } else {
             let info: String = if cli.mime_type {
                 file_system::get_mime_type(file)
@@ -91,20 +91,20 @@ fn main() {
             };
 
             // Print information
-            logging_function(&file_path, &cli.seperator, &info)
+            logging_function(&file_path, &cli.separator, &info)
         }
     });
 }
 
-fn standard_logging(file: &String, seperator: &String, info: &String) {
-    println!("{file:<15}{seperator} {info:<15}")
+fn standard_logging(file: &String, separator: &String, info: &String) {
+    println!("{file:<15}{separator} {info:<15}")
 }
 fn brief_logging(_: &String, _: &String, info: &String) {
     println!("{info}")
 }
 
-fn standard_file_open_error(file: &String, seperator: &String) {
-    eprintln!("{file:<15}{seperator} cannot open '{file}' (No such file, directory or flag)");
+fn standard_file_open_error(file: &String, separator: &String) {
+    eprintln!("{file:<15}{separator} cannot open '{file}' (No such file, directory or flag)");
 }
 
 fn brief_file_open_error(file: &String, _: &String) {
