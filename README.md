@@ -11,6 +11,11 @@
 - [x] determining file type
 - [x] determining file's mime type
 
+## install using **cargo**
+```sh
+$ cargo install file-rs
+```
+
 ## building from git source
 you have 2 options for mime type detection library. one of them must be enabled:
 - infer(default. smaller but may perform slower sometimes)
